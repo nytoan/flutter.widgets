@@ -11,7 +11,7 @@ const minItemHeight = 20.0;
 const maxItemHeight = 150.0;
 const scrollDuration = Duration(seconds: 2);
 
-const randomMax = 1 << 32;
+const randomMax = 1 << 16;
 
 void main() {
   runApp(ScrollablePositionedListExample());
@@ -90,7 +90,7 @@ class _ScrollablePositionedListPageState
           builder: (context, orientation) => Column(
             children: <Widget>[
               Expanded(
-                child: list(orientation),
+                child: list(Orientation.portrait),
               ),
               positionsView,
               Row(
