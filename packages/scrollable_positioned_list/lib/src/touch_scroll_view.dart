@@ -106,7 +106,13 @@ class _TouchScrollViewState extends State<TouchScrollView>
         _velocities.removeFirst();
         _velocities.addLast(dy / dt);
       },
-      onPointerUp: (details) => _startInertiaScroll(_velocities.last),
+      onPointerUp: (details) {
+        if (_controller.offset > 0 ||
+            _controller.offset < -_controller.position.maxScrollExtent) {
+          return;
+        }
+        _startInertiaScroll(_velocities.last);
+      },
       child: Stack(children: [widget.child]),
     );
   }
