@@ -107,7 +107,7 @@ class _TouchScrollViewState extends State<TouchScrollView>
         _velocities.addLast(dy / dt);
       },
       onPointerUp: (details) {
-        if (_controller.offset > 0 ||
+        if (_controller.offset >= 0 ||
             _controller.offset < -_controller.position.maxScrollExtent) {
           return;
         }
