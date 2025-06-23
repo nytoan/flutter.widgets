@@ -511,6 +511,7 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
     if (_isTransitioning) {
       final scrollCompleter = Completer<void>();
       _stopScroll(canceled: true);
+      _cancelScroll();
       SchedulerBinding.instance.addPostFrameCallback((_) async {
         await _startScroll(
           index: index,
@@ -523,6 +524,7 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
       });
       await scrollCompleter.future;
     } else {
+      _cancelScroll();
       await _startScroll(
         index: index,
         alignment: alignment,
@@ -530,6 +532,15 @@ class _ScrollablePositionedListState extends State<ScrollablePositionedList>
         curve: curve,
         opacityAnimationWeights: opacityAnimationWeights,
       );
+    }
+  }
+
+  void _cancelScroll(){
+    if (primary.scrollController.hasClients) {
+      primary.scrollController.jumpTo(primary.scrollController.offset+0.01);
+    }
+    if (secondary.scrollController.hasClients) {
+      secondary.scrollController.jumpTo(secondary.scrollController.offset+0.01);
     }
   }
 

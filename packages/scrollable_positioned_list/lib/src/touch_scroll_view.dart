@@ -50,8 +50,6 @@ class _TouchScrollViewState extends State<TouchScrollView>
   }
 
   void _onScrollControllerChange() {
-    // Si le changement n'est pas causé par notre animation interne,
-    // alors c'est un changement externe -> arrêter l'animation
     if (!_isInternalUpdate && _animationController.isAnimating) {
       _animationController.stop();
     }
@@ -60,12 +58,7 @@ class _TouchScrollViewState extends State<TouchScrollView>
   void _update() {
     if (_controller.hasClients) {
       _isInternalUpdate = true;
-      _controller.jumpTo(
-        min(
-          max(0, _animationController.value),
-          _controller.position.maxScrollExtent,
-        ),
-      );
+      _controller.jumpTo(_animationController.value);
       _isInternalUpdate = false;
     }
   }
@@ -92,10 +85,14 @@ class _TouchScrollViewState extends State<TouchScrollView>
   Widget build(BuildContext context) {
     return Listener(
       onPointerDown: (details) {
+        if (!_controller.hasClients) return;
+
         _animationController.stop();
         _velocities = Queue.from([0, 0]);
       },
       onPointerMove: (details) {
+        if (!_controller.hasClients) return;
+
         final dt =
             (details.timeStamp - _lastUpdateTime).inMilliseconds / 1000.0;
         _lastUpdateTime = details.timeStamp;
@@ -107,10 +104,7 @@ class _TouchScrollViewState extends State<TouchScrollView>
         _velocities.addLast(dy / dt);
       },
       onPointerUp: (details) {
-        if (_controller.offset < 0 ||
-            _controller.offset > _controller.position.maxScrollExtent) {
-          return;
-        }
+        if (!_controller.hasClients) return;
         _startInertiaScroll(_velocities.last);
       },
       child: Stack(children: [widget.child]),
