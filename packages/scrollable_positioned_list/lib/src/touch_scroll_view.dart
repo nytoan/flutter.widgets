@@ -58,7 +58,15 @@ class _TouchScrollViewState extends State<TouchScrollView>
   void _update() {
     if (_controller.hasClients) {
       _isInternalUpdate = true;
-      _controller.jumpTo(_animationController.value);
+      _controller.jumpTo(
+        min(
+          max(
+            _controller.position.minScrollExtent,
+            _animationController.value,
+          ),
+          _controller.position.maxScrollExtent,
+        ),
+      );
       _isInternalUpdate = false;
     }
   }
