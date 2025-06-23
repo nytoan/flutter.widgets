@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
 class TouchScrollView extends StatefulWidget {
-  const TouchScrollView({required this.child, this.controller});
+  const TouchScrollView({
+    required this.child,
+    required this.controller,
+  });
 
   final Widget child;
-  final ScrollController? controller;
+  final ScrollController controller;
 
   @override
   _TouchScrollViewState createState() => _TouchScrollViewState();
@@ -23,6 +26,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
   Queue<double> _velocities = Queue.from([0, 0]);
 
   late Duration _lastUpdateTime;
+
+  bool _isInternalUpdate = false;
 
   @override
   void initState() {
@@ -39,17 +44,29 @@ class _TouchScrollViewState extends State<TouchScrollView>
         }
       });
 
-    _controller = widget.controller ?? ScrollController();
+    _controller = widget.controller;
+
+    _controller.addListener(_onScrollControllerChange);
+  }
+
+  void _onScrollControllerChange() {
+    // Si le changement n'est pas causé par notre animation interne,
+    // alors c'est un changement externe -> arrêter l'animation
+    if (!_isInternalUpdate && _animationController.isAnimating) {
+      _animationController.stop();
+    }
   }
 
   void _update() {
     if (_controller.hasClients) {
+      _isInternalUpdate = true;
       _controller.jumpTo(
         min(
           max(0, _animationController.value),
           _controller.position.maxScrollExtent,
         ),
       );
+      _isInternalUpdate = false;
     }
   }
 
@@ -63,10 +80,10 @@ class _TouchScrollViewState extends State<TouchScrollView>
 
   @override
   void dispose() {
+    _controller.removeListener(_onScrollControllerChange);
+
     _animationController.removeListener(_update);
     _animationController.dispose();
-
-    _controller.dispose();
 
     super.dispose();
   }
