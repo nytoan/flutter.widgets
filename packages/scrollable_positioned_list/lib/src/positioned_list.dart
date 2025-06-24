@@ -169,6 +169,7 @@ class _PositionedListState extends State<PositionedList> {
   Widget build(BuildContext context) => RegistryWidget(
         elementNotifier: registeredElements,
         child: TouchScrollView(
+          scrollDirection: widget.scrollDirection,
           controller: scrollController,
           child: UnboundedCustomScrollView(
             anchor: widget.alignment,

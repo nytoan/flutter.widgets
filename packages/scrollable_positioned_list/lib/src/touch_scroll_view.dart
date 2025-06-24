@@ -8,10 +8,12 @@ class TouchScrollView extends StatefulWidget {
   const TouchScrollView({
     required this.child,
     required this.controller,
+    this.scrollDirection = Axis.vertical,
   });
 
   final Widget child;
   final ScrollController controller;
+  final Axis scrollDirection;
 
   @override
   _TouchScrollViewState createState() => _TouchScrollViewState();
@@ -105,11 +107,13 @@ class _TouchScrollViewState extends State<TouchScrollView>
             (details.timeStamp - _lastUpdateTime).inMilliseconds / 1000.0;
         _lastUpdateTime = details.timeStamp;
 
-        final dy = details.delta.dy;
-        _controller.jumpTo(_controller.offset - dy);
+        final delta = widget.scrollDirection == Axis.vertical
+            ? details.delta.dy
+            : details.delta.dx;
+        _controller.jumpTo(_controller.offset - delta);
 
         _velocities.removeFirst();
-        _velocities.addLast(dy / dt);
+        _velocities.addLast(delta / dt);
       },
       onPointerUp: (details) {
         if (!_controller.hasClients ||
