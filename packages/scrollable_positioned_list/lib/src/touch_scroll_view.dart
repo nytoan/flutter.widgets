@@ -25,17 +25,19 @@ class _TouchScrollViewState extends State<TouchScrollView>
 
   late AnimationController _animationController;
 
-  Queue<double> _velocities = Queue.from([0, 0]);
-
-  late Duration _lastUpdateTime;
+  late DateTime _lastUpdateDate;
 
   bool _isInternalUpdate = false;
+
+  Queue<(int, double)> _datas = Queue.from([
+    (0, 0.0),
+    (0, 0.0),
+    (0, 0.0),
+  ]);
 
   @override
   void initState() {
     super.initState();
-
-    _lastUpdateTime = Duration(milliseconds: 0);
 
     _animationController = AnimationController.unbounded(vsync: this)
       ..addListener(_update)
@@ -73,7 +75,16 @@ class _TouchScrollViewState extends State<TouchScrollView>
     }
   }
 
-  void _startInertiaScroll(double velocity) {
+  void _startInertiaScroll() {
+    final d = _datas.fold((0, 0.0), (acc, n) {
+      if (n.$1 > acc.$1) {
+        acc = n;
+      }
+      return acc;
+    });
+
+    final velocity = d.$2 / (d.$1 / 1000);
+
     final simulation = FrictionSimulation(0.05, _controller.offset, -velocity);
 
     _animationController
@@ -81,49 +92,81 @@ class _TouchScrollViewState extends State<TouchScrollView>
       ..animateWith(simulation);
   }
 
+  void _dragDown() {
+    if (!_controller.hasClients) return;
+
+    _animationController.stop();
+
+    _datas = Queue.from([
+      (0, 0.0),
+      (0, 0.0),
+      (0, 0.0),
+    ]);
+  }
+
+  void _dragStart() {
+    _lastUpdateDate = DateTime.timestamp();
+  }
+
+  void _dragUpdate(double delta) {
+    if (!_controller.hasClients) return;
+
+    final timeStamp =
+        DateTime.timestamp().difference(_lastUpdateDate).inMilliseconds;
+
+    _lastUpdateDate = DateTime.timestamp();
+
+    _controller.jumpTo(_controller.offset - delta);
+
+    _datas
+      ..removeFirst()
+      ..addLast((timeStamp, delta));
+  }
+
+  void _dragEnd() {
+    if (!_controller.hasClients ||
+        _controller.offset < _controller.position.minScrollExtent ||
+        _controller.offset > _controller.position.maxScrollExtent) {
+      return;
+    }
+
+    _startInertiaScroll();
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onScrollControllerChange);
 
-    _animationController.removeListener(_update);
-    _animationController.dispose();
+    _animationController
+      ..removeListener(_update)
+      ..dispose();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (details) {
-        if (!_controller.hasClients) return;
-
-        _animationController.stop();
-        _velocities = Queue.from([0, 0]);
-      },
-      onPointerMove: (details) {
-        if (!_controller.hasClients) return;
-
-        final dt =
-            (details.timeStamp - _lastUpdateTime).inMilliseconds / 1000.0;
-        _lastUpdateTime = details.timeStamp;
-
-        final delta = widget.scrollDirection == Axis.vertical
-            ? details.delta.dy
-            : details.delta.dx;
-        _controller.jumpTo(_controller.offset - delta);
-
-        _velocities.removeFirst();
-        _velocities.addLast(delta / dt);
-      },
-      onPointerUp: (details) {
-        if (!_controller.hasClients ||
-            _controller.offset < _controller.position.minScrollExtent ||
-            _controller.offset > _controller.position.maxScrollExtent) {
-          return;
-        }
-        _startInertiaScroll(_velocities.last);
-      },
-      child: Stack(children: [widget.child]),
+    return GestureDetector(
+      onVerticalDragDown:
+          widget.scrollDirection == Axis.vertical ? (_) => _dragDown() : null,
+      onVerticalDragStart:
+          widget.scrollDirection == Axis.vertical ? (_) => _dragStart() : null,
+      onVerticalDragUpdate: widget.scrollDirection == Axis.vertical
+          ? (details) => _dragUpdate(details.delta.dy)
+          : null,
+      onVerticalDragEnd:
+          widget.scrollDirection == Axis.vertical ? (_) => _dragEnd() : null,
+      onHorizontalDragDown:
+          widget.scrollDirection == Axis.horizontal ? (_) => _dragDown() : null,
+      onHorizontalDragStart: widget.scrollDirection == Axis.horizontal
+          ? (_) => _dragStart()
+          : null,
+      onHorizontalDragUpdate: widget.scrollDirection == Axis.horizontal
+          ? (details) => _dragUpdate(details.delta.dx)
+          : null,
+      onHorizontalDragEnd:
+          widget.scrollDirection == Axis.horizontal ? (_) => _dragEnd() : null,
+      child: widget.child,
     );
   }
 }
