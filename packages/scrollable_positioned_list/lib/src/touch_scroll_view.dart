@@ -29,6 +29,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
 
   bool _isInternalUpdate = false;
 
+  bool _showDebug = false;
+
   Queue<(int, double)> _datas = Queue.from([
     (0, 0.0),
     (0, 0.0),
@@ -51,6 +53,13 @@ class _TouchScrollViewState extends State<TouchScrollView>
     _controller = widget.controller;
 
     _controller.addListener(_onScrollControllerChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant TouchScrollView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _controller = widget.controller;
   }
 
   void _onScrollControllerChange() {
@@ -76,6 +85,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
   }
 
   void _startInertiaScroll() {
+    if (_showDebug) setState(() {});
+
     final d = _datas.fold((0, 0.0), (acc, n) {
       if (n.$1 > acc.$1) {
         acc = n;
@@ -146,6 +157,19 @@ class _TouchScrollViewState extends State<TouchScrollView>
 
   @override
   Widget build(BuildContext context) {
+    final _debugView = _showDebug
+        ? Container(
+            decoration: BoxDecoration(
+                color: Colors.red.shade200,
+                border: Border.all(color: Colors.blue)),
+            padding: EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [Text('Debug:'), Text(_datas.toString())],
+            ),
+          )
+        : SizedBox.shrink();
     return GestureDetector(
       onVerticalDragDown:
           widget.scrollDirection == Axis.vertical ? (_) => _dragDown() : null,
@@ -166,7 +190,12 @@ class _TouchScrollViewState extends State<TouchScrollView>
           : null,
       onHorizontalDragEnd:
           widget.scrollDirection == Axis.horizontal ? (_) => _dragEnd() : null,
-      child: widget.child,
+      child: Stack(
+        children: [
+          widget.child,
+          _debugView,
+        ],
+      ),
     );
   }
 }
