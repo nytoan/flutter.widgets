@@ -29,6 +29,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
 
   bool _isInternalUpdate = false;
 
+  bool _moved = false;
+
   bool _showDebug = false;
 
   Queue<(int, double)> _datas = Queue.from([
@@ -85,6 +87,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
   }
 
   void _startInertiaScroll() {
+    if (_moved) return;
+
     if (_showDebug) setState(() {});
 
     final d = _datas.fold((0, 0.0), (acc, n) {
@@ -113,6 +117,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
       (0, 0.0),
       (0, 0.0),
     ]);
+
+    _moved = false;
   }
 
   void _dragStart() {
@@ -132,6 +138,8 @@ class _TouchScrollViewState extends State<TouchScrollView>
     _datas
       ..removeFirst()
       ..addLast((timeStamp, delta));
+
+    _moved = true;
   }
 
   void _dragEnd() {
