@@ -87,7 +87,7 @@ class _TouchScrollViewState extends State<TouchScrollView>
   }
 
   void _startInertiaScroll() {
-    if (_moved) return;
+    if (!_moved) return;
 
     if (_showDebug) setState(() {});
 
